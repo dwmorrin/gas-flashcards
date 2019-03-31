@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <?!= include_("style") ?>
+  </head>
+  <body>
+    <nav>
+      <select name="chapter">
+        <option value="all">All</option>
+      </select>
+      <label for="chapter">Chapter</label>
+      <select name="section" disabled>
+        <option value="all">All</option>
+      </select>
+      <label for="section">Section</label>
+      <a target="_blank" id="datasheetlink">Data Spreadsheet</a>
+    </nav>
+    <input type="checkbox" id="shuffle">
+    <label for="shuffle">Shuffle after last card</label>
+    <span id="status">Card _ of _</span>
+    <p id="front" class="hidden"></p>
+    <p id="back" class="hidden"></p>
+    
+    <?!= include_("script") ?>
+  </body>
+</html>
+
+
