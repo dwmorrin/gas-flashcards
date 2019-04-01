@@ -13,3 +13,4 @@ and carets as superscripts (essential for chemistry flash cards).
 ## Notes on installing
 I recommend getting [clasp](https://github.com/google/clasp) which works well with git.
 This is meant to be deployed as a [web app](https://developers.google.com/apps-script/guides/web).
+You can also [make a copy of the script](https://script.google.com/d/17prCpCLzts_hgQazJpv_yWiJzc9fimyuuiq-tgYVZNsNd_W8P4rUZqN_/edit?usp=sharing).
