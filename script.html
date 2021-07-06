@@ -1,22 +1,67 @@
 <script>
   /* global google */
+
+  /**
+   * defaults follow index.js
+   */
+  const defaults = {
+    headings: {
+      CHAPTER: "<?!= headings.CHAPTER ?>",
+      SECTION: "<?!= headings.SECTION ?>",
+      FRONT: "<?!= headings.FRONT ?>",
+      BACK: "<?!= headings.BACK ?>",
+    },
+  }
+
+  /**
+   * follows Card.js
+   */
+  class Card {
+    constructor({ chapter = "", section = "", front = "", back = "" } = {}) {
+      this.chapter = chapter
+      this.section = section
+      this.front = front
+      this.back = back
+    }
+
+    toArray() {
+      const array = []
+      const { CHAPTER, SECTION, FRONT, BACK } = defaults.headings
+      array[CHAPTER] = this.chapter
+      array[SECTION] = this.section
+      array[FRONT] = this.front
+      array[BACK] = this.back
+      return array
+    }
+
+    static fromArray(array) {
+      const { CHAPTER, SECTION, FRONT, BACK } = defaults.headings
+      return new Card({
+        chapter: array[CHAPTER],
+        section: array[SECTION],
+        front: array[FRONT],
+        back: array[BACK],
+      })
+    }
+  }
+
   const front = document.querySelector("#front"),
     back = document.querySelector("#back"),
     chapter = document.querySelector('select[name="chapter"]'),
     section = document.querySelector('select[name="section"]'),
     dataSheetLink = document.querySelector("#datasheetlink"),
     shuffleCheckbox = document.querySelector("#shuffle"),
-    statusSpan = document.querySelector("#status"),
-    run = google.script.run
-      .withFailureHandler(handleError)
-      .withSuccessHandler(start)
+    statusSpan = document.querySelector("#status")
 
   let cards = [],
     chapters = {},
     cardIndex = 0
 
   // call server
-  run.getCards()
+  google.script.run
+    .withFailureHandler(handleError)
+    .withSuccessHandler(start)
+    .getCards()
 
   // register event handlers
   window.addEventListener("click", handleClick)
@@ -159,7 +204,7 @@
    * @param {object} response - response from server
    */
   function start(response) {
-    cards = response.cards
+    cards = response.cards.map((data) => new Card(data))
     chapters = response.chapters
     dataSheetLink.setAttribute("href", response.url)
     fill(chapter, chapters)

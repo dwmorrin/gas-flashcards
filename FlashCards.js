@@ -1,3 +1,5 @@
+/* global Card */
+
 /* exported
     doGet 
     getCards
@@ -17,35 +19,6 @@ const defaults = {
   },
 }
 
-class Card {
-  constructor({ chapter = "", section = "", front = "", back = "" } = {}) {
-    this.chapter = chapter
-    this.section = section
-    this.front = front
-    this.back = back
-  }
-
-  toArray() {
-    const array = []
-    const { CHAPTER, SECTION, FRONT, BACK } = defaults.headings
-    array[CHAPTER] = this.chapter
-    array[SECTION] = this.section
-    array[FRONT] = this.front
-    array[BACK] = this.back
-    return array
-  }
-
-  static fromArray(array) {
-    const { CHAPTER, SECTION, FRONT, BACK } = defaults.headings
-    return new Card({
-      chapter: array[CHAPTER],
-      section: array[SECTION],
-      front: array[FRONT],
-      back: array[BACK],
-    })
-  }
-}
-
 /**
  * HTTP GET handler
  * this is the starting point of the web app
@@ -53,6 +26,7 @@ class Card {
  */
 function doGet(/*request*/) {
   const template = HtmlService.createTemplateFromFile("index")
+  template.defaults = defaults
   const html = template.evaluate()
   html.setTitle("flash cards").addMetaTag("viewport", "width=device-width")
   return html
@@ -129,10 +103,13 @@ function getUrl_() {
 /**
  * Template helper function for modularizing HTML, CSS, and JavaScript
  * @param {string} filename
+ * @param {Record<string, unknown>} params
  * @return {string} contents of the file
  */
-function include_(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent()
+function include_(filename, params = {}) {
+  const template = HtmlService.createTemplateFromFile(filename)
+  Object.assign(template, params)
+  return template.evaluate().getContent()
 }
 
 /**
