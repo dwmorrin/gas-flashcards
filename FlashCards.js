@@ -107,7 +107,7 @@ function getDefaultCards_() {
  */
 function getSheet_() {
   const id = PropertiesService.getUserProperties().getProperty(
-    defaults.SHEET_ID
+    defaults.SPREADSHEET_ID
   )
   if (!id) return newSpreadsheet_().getSheets()[0]
   try {
@@ -143,7 +143,7 @@ function include_(filename) {
 function newSpreadsheet_() {
   const spreadsheet = SpreadsheetApp.create(defaults.SPREADSHEET_NAME)
   const userProperties = PropertiesService.getUserProperties()
-  userProperties.setProperty(defaults.SHEET_ID, spreadsheet.getId())
+  userProperties.setProperty(defaults.SPREADSHEET_ID, spreadsheet.getId())
   userProperties.setProperty(defaults.SHEET_URL, spreadsheet.getUrl())
   const sheet = spreadsheet.getSheets()[0]
   const headerRow = new Card({
