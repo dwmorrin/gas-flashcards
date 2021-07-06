@@ -1,184 +1,182 @@
 <script>
-/* global google */
-const front = document.querySelector("#front"),
-      back = document.querySelector("#back"),
-      chapter = document.querySelector('select[name="chapter"]'),
-      section = document.querySelector('select[name="section"]'), 
-      dataSheetLink = document.querySelector("#datasheetlink"),
-      shuffleCheckbox = document.querySelector("#shuffle"),
-      statusSpan = document.querySelector("#status"),
-      run = google.script.run
-        .withFailureHandler(handleError)
-          .withSuccessHandler(start)
+  /* global google */
+  const front = document.querySelector("#front"),
+    back = document.querySelector("#back"),
+    chapter = document.querySelector('select[name="chapter"]'),
+    section = document.querySelector('select[name="section"]'),
+    dataSheetLink = document.querySelector("#datasheetlink"),
+    shuffleCheckbox = document.querySelector("#shuffle"),
+    statusSpan = document.querySelector("#status"),
+    run = google.script.run
+      .withFailureHandler(handleError)
+      .withSuccessHandler(start)
 
-let cards = [],
+  let cards = [],
     chapters = {},
     cardIndex = 0
 
-// call server
-run.getCards()
+  // call server
+  run.getCards()
 
-// register event handlers
-window.addEventListener("click", handleClick)
-window.addEventListener("keydown", handleKeydown)
-chapter.addEventListener("change", handleChange)
-google.script.history.setChangeHandler(handleHistory)
+  // register event handlers
+  window.addEventListener("click", handleClick)
+  window.addEventListener("keydown", handleKeydown)
+  chapter.addEventListener("change", handleChange)
+  google.script.history.setChangeHandler(handleHistory)
 
-// end script; begin function definitions
+  // end script; begin function definitions
 
-/**
- * cardAction is called when the user clicks on a card or presses spacebar
- */
-function cardAction() {
-  if (front.classList.contains("hidden")) {
-    do {
-      ++cardIndex
-      if (cardIndex == cards.length) {
-        if (shuffleCheckbox.checked) {
-          shuffle(cards)
+  /**
+   * cardAction is called when the user clicks on a card or presses spacebar
+   */
+  function cardAction() {
+    if (front.classList.contains("hidden")) {
+      do {
+        ++cardIndex
+        if (cardIndex == cards.length) {
+          if (shuffleCheckbox.checked) {
+            shuffle(cards)
+          }
+          cardIndex = 0
         }
-        cardIndex = 0
-      }
-    } while (
-      (chapter.value != "all" &&
-       cards[cardIndex].chapter != chapter.value) ||
-      (section.value != "all" &&
-       cards[cardIndex].section != section.value)
-    )
-    updateCard(cards[cardIndex])
+      } while (
+        (chapter.value != "all" && cards[cardIndex].chapter != chapter.value) ||
+        (section.value != "all" && cards[cardIndex].section != section.value)
+      )
+      updateCard(cards[cardIndex])
+    }
+    flipCard()
+    google.script.history.push({ cardIndex })
   }
-  flipCard()
-  google.script.history.push({cardIndex})
-}
 
-/** helper function to clear out the section select element */
-function empty(el) {
-  while (el.hasChildNodes()) {
-    el.removeChild(el.lastChild)
+  /** helper function to clear out the section select element */
+  function empty(el) {
+    while (el.hasChildNodes()) {
+      el.removeChild(el.lastChild)
+    }
   }
-}
 
-function fill(el, object, value) {
-  if (value) {
-    object = object[value]
+  function fill(el, object, value) {
+    if (value) {
+      object = object[value]
+    }
+    for (let number in object) {
+      const option = document.createElement("option")
+      option.textContent = option.value = number
+      el.appendChild(option)
+    }
   }
-  for (let number in object) {
-    const option = document.createElement("option")
-    option.textContent = option.value = number
-    el.appendChild(option)
+
+  function flipCard() {
+    front.classList.toggle("hidden")
+    back.classList.toggle("hidden")
   }
-}
 
-function flipCard() {
-  front.classList.toggle("hidden")
-  back.classList.toggle("hidden")
-}
-
-/** handles the chapter select element */
-function handleChange(change) {
-  empty(section)
-  const all = document.createElement("option")
-  all.textContent = "All"
-  all.value = "all"
-  all.setAttribute("selected", true)
-  section.appendChild(all)
-  if (change.target.value == "all") {
-    section.setAttribute("disabled", true)
-  } else {
-    section.removeAttribute("disabled")
-    fill(section, chapters, change.target.value)
+  /** handles the chapter select element */
+  function handleChange(change) {
+    empty(section)
+    const all = document.createElement("option")
+    all.textContent = "All"
+    all.value = "all"
+    all.setAttribute("selected", true)
+    section.appendChild(all)
+    if (change.target.value == "all") {
+      section.setAttribute("disabled", true)
+    } else {
+      section.removeAttribute("disabled")
+      fill(section, chapters, change.target.value)
+    }
   }
-}
 
-/** handles clicking on the card */
-function handleClick(click) {
-  if (click.target.tagName != "P") {
-    return
-  }
-  cardAction()
-}
-
-// simple display of error to the user
-function handleError(error) {
-  front.textContent = back.textContent = error.message
-}
-
-function handleHistory(change) {
-  if (! change.state) {
-    return
-  }
-  cardIndex = change.state.cardIndex
-  updateCard(cards[cardIndex])
-  flipCard()
-}
-
-function handleKeydown(keydown) {
-  if (keydown.key == " ") {
+  /** handles clicking on the card */
+  function handleClick(click) {
+    if (click.target.tagName != "P") {
+      return
+    }
     cardAction()
   }
-}
 
-/**
- * Replaces underscores (_) with subscript tags and carets (^)
- *   with superscript tags.  Digits can be grouped without parentheses,
- *   otherwise use parentheses to group anything beyond a single character. 
- * Example usage:
- *   [Cell text]   =>   [Output HTML]                  [notes]
- *   H_2O          =>   H<sub>2</sub>O
- *   C_18H_6       =>   C<sub>18</sub>H<sub>6</sub>
- *   C_(18)H_6     =>   C<sub>18</sub>H<sub>6</sub>    (example of optional parentheses)
- *   x^2 - y^(9x)  =>   x<sup>2</sup> - y<sup>9x</sup> (example of required parentheses)
- * @param {string} text - text from Google Sheet cell
- * @returns {string} - text modified with HTML tags if text uses '_' or '^'
- */
-function prettyPrint(text) {
-  const subscriptRegex = /_(?:\()(.+?)(?:\))|_(\d+|.)/g,
+  // simple display of error to the user
+  function handleError(error) {
+    front.textContent = back.textContent = error.message
+  }
+
+  function handleHistory(change) {
+    if (!change.state) {
+      return
+    }
+    cardIndex = change.state.cardIndex
+    updateCard(cards[cardIndex])
+    flipCard()
+  }
+
+  function handleKeydown(keydown) {
+    if (keydown.key == " ") {
+      cardAction()
+    }
+  }
+
+  /**
+   * Replaces underscores (_) with subscript tags and carets (^)
+   *   with superscript tags.  Digits can be grouped without parentheses,
+   *   otherwise use parentheses to group anything beyond a single character.
+   * Example usage:
+   *   [Cell text]   =>   [Output HTML]                  [notes]
+   *   H_2O          =>   H<sub>2</sub>O
+   *   C_18H_6       =>   C<sub>18</sub>H<sub>6</sub>
+   *   C_(18)H_6     =>   C<sub>18</sub>H<sub>6</sub>    (example of optional parentheses)
+   *   x^2 - y^(9x)  =>   x<sup>2</sup> - y<sup>9x</sup> (example of required parentheses)
+   * @param {string} text - text from Google Sheet cell
+   * @returns {string} - text modified with HTML tags if text uses '_' or '^'
+   */
+  function prettyPrint(text) {
+    const subscriptRegex = /_(?:\()(.+?)(?:\))|_(\d+|.)/g,
       superscriptRegex = /\^(?:\()(.+?)(?:\))|\^(\d+|.)/g
-  text = text.replace(subscriptRegex, "<sub>$1$2</sub>")
-  text = text.replace(superscriptRegex, "<sup>$1$2</sup>")
-  return text
-}
-
-/**
- * Goes through deck once, swapping the ith card with a randomly
- *   selected card.
- * Mutates the array in place.
- * @param {object[]} cards
- * @returns {void}
- */
-function shuffle(cards) {
-  for (let i = 0, l = cards.length; i < l; ++i) {
-    let swapIndex = Math.floor(Math.random() * cards.length)
-    let swapValue = cards[swapIndex]
-    cards[swapIndex] = cards[i]
-    cards[i] = swapValue
+    text = text.replace(subscriptRegex, "<sub>$1$2</sub>")
+    text = text.replace(superscriptRegex, "<sup>$1$2</sup>")
+    return text
   }
-}
 
-/**
- * callback function; initializes app
- * @see google.script.run
- * @param {object} response - response from server
- */
-function start(response) {
-  cards = response.cards
-  chapters = response.chapters
-  dataSheetLink.setAttribute("href", response.url)
-  fill(chapter, chapters)
-  if (shuffleCheckbox.checked) {
-    shuffle(cards)
+  /**
+   * Goes through deck once, swapping the ith card with a randomly
+   *   selected card.
+   * Mutates the array in place.
+   * @param {object[]} cards
+   * @returns {void}
+   */
+  function shuffle(cards) {
+    for (let i = 0, l = cards.length; i < l; ++i) {
+      let swapIndex = Math.floor(Math.random() * cards.length)
+      let swapValue = cards[swapIndex]
+      cards[swapIndex] = cards[i]
+      cards[i] = swapValue
+    }
   }
-  cardIndex = 0
-  updateCard(cards[cardIndex])
-  front.classList.remove("hidden")
-  google.script.history.push({cardIndex})
-}
 
-/** helper function to abstract the details of rendering each card */
-function updateCard(card) {
-  front.innerHTML = prettyPrint(card.front)
-  back.innerHTML = prettyPrint(card.back)
-  const number = cardIndex + 1
-  statusSpan.textContent = `Card ${number} of ${cards.length}`
-}
+  /**
+   * callback function; initializes app
+   * @see google.script.run
+   * @param {object} response - response from server
+   */
+  function start(response) {
+    cards = response.cards
+    chapters = response.chapters
+    dataSheetLink.setAttribute("href", response.url)
+    fill(chapter, chapters)
+    if (shuffleCheckbox.checked) {
+      shuffle(cards)
+    }
+    cardIndex = 0
+    updateCard(cards[cardIndex])
+    front.classList.remove("hidden")
+    google.script.history.push({ cardIndex })
+  }
+
+  /** helper function to abstract the details of rendering each card */
+  function updateCard(card) {
+    front.innerHTML = prettyPrint(card.front)
+    back.innerHTML = prettyPrint(card.back)
+    const number = cardIndex + 1
+    statusSpan.textContent = `Card ${number} of ${cards.length}`
+  }
 </script>
