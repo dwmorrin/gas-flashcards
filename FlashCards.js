@@ -3,6 +3,7 @@
     getCards
     include_
 */
+
 const defaults = {
   SPREADSHEET_NAME: "Flash Cards", // register preferred name here
   SPREADSHEET_ID: "sheetId", // avoids bugs from string based key
@@ -14,6 +15,35 @@ const defaults = {
     FRONT: 2,
     BACK: 3,
   },
+}
+
+class Card {
+  constructor({ chapter = "", section = "", front = "", back = "" } = {}) {
+    this.chapter = chapter
+    this.section = section
+    this.front = front
+    this.back = back
+  }
+
+  toArray() {
+    const array = []
+    const { CHAPTER, SECTION, FRONT, BACK } = defaults.headings
+    array[CHAPTER] = this.chapter
+    array[SECTION] = this.section
+    array[FRONT] = this.front
+    array[BACK] = this.back
+    return array
+  }
+
+  static fromArray(array) {
+    const { CHAPTER, SECTION, FRONT, BACK } = defaults.headings
+    return new Card({
+      chapter: array[CHAPTER],
+      section: array[SECTION],
+      front: array[FRONT],
+      back: array[BACK],
+    })
+  }
 }
 
 /**
@@ -37,24 +67,15 @@ function getCards() {
   const sheet = getSheet_()
   const sheetValues = sheet.getDataRange().getValues().slice(1)
   const values = sheetValues.length ? sheetValues : getDefaultCards_()
-  const cards = []
-  const chapters = {}
-  const h = defaults.headings
-  values.forEach(function (row) {
-    if (!chapters[row[h.CHAPTER]]) {
-      chapters[row[h.CHAPTER]] = {}
-    }
-    chapters[row[h.CHAPTER]][row[h.SECTION]] = true
-    cards.push({
-      chapter: row[h.CHAPTER],
-      section: row[h.SECTION],
-      front: row[h.FRONT],
-      back: row[h.BACK],
-    })
-  })
+  const cards = values.map(Card.fromArray)
   return {
-    cards: cards,
-    chapters: chapters,
+    cards,
+    // reducer makes a dictionary of chapters and sections
+    chapters: cards.reduce((chapters, card) => {
+      if (!chapters[card.chapter]) chapters[card.chapter] = {}
+      chapters[card.chapter][card.section] = true
+      return chapters
+    }, {}),
     url: getUrl_(),
   }
 }
@@ -65,16 +86,17 @@ function getCards() {
  * @returns {string[][]}
  */
 function getDefaultCards_() {
-  const card = []
-  const h = defaults.headings
-  card[h.CHAPTER] = card[h.SECTION] = 1
-  card[h.FRONT] =
-    "This is the front of a card. Click the card to " + "turn it over."
-  card[h.BACK] =
-    "This is the back of a card. The back button should " +
-    "return you to the front of the card. Use the link above to enter " +
-    "new cards and refresh this page to load the new set of cards."
-  return [card]
+  return [
+    new Card({
+      chapter: "1",
+      section: "1",
+      front: "This is the front of a card. Click the card to turn it over.",
+      back:
+        "This is the back of a card. The back button should " +
+        "return you to the front of the card. Use the link above to enter " +
+        "new cards and refresh this page to load the new set of cards.",
+    }).toArray(),
+  ]
 }
 
 /**
@@ -124,12 +146,12 @@ function newSpreadsheet_() {
   userProperties.setProperty(defaults.SHEET_ID, spreadsheet.getId())
   userProperties.setProperty(defaults.SHEET_URL, spreadsheet.getUrl())
   const sheet = spreadsheet.getSheets()[0]
-  const headerRow = []
-  const h = defaults.headings
-  headerRow[h.CHAPTER] = "Chapter"
-  headerRow[h.SECTION] = "Section"
-  headerRow[h.FRONT] = "Front"
-  headerRow[h.BACK] = "Back"
+  const headerRow = new Card({
+    chapter: "Chapter",
+    section: "Section",
+    front: "Front",
+    back: "Back",
+  }).toArray()
   sheet.appendRow(headerRow)
   sheet.setFrozenRows(1)
   return spreadsheet
