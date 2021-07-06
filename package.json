@@ -6,6 +6,7 @@
   "author": "David Morrin <dwmorrin@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "@types/google-apps-script": "^1.0.35",
     "eslint": "^7.30.0",
     "eslint-plugin-googleappsscript": "^1.0.4"
   }

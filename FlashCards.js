@@ -103,15 +103,13 @@ function getDefaultCards_() {
  * getSheet_ will open or create the default data sheet
  * if the id is set but does not return a sheet, a new spreadsheet
  * will be created.
- * @returns {Sheet} the user's default data sheet
+ * @returns {GoogleAppsScript.Spreadsheet.Sheet} the user's default data sheet
  */
 function getSheet_() {
   const id = PropertiesService.getUserProperties().getProperty(
     defaults.SHEET_ID
   )
-  if (!id) {
-    return newSpreadsheet_().getSheets()[0]
-  }
+  if (!id) return newSpreadsheet_().getSheets()[0]
   try {
     return SpreadsheetApp.openById(id).getSheets()[0]
   } catch (error) {
@@ -121,24 +119,26 @@ function getSheet_() {
 }
 
 /**
- * getUrl_ is a helper function
- * @returns {string} - url of the data sheeet
+ * Get the URL of the Sheet with the card data
+ * @returns {string} - url of the data sheet
  */
 function getUrl_() {
   return PropertiesService.getUserProperties().getProperty(defaults.SHEET_URL)
 }
 
 /**
- * template helper function for modularizing HTML, CSS, and JavaScript
+ * Template helper function for modularizing HTML, CSS, and JavaScript
+ * @param {string} filename
+ * @return {string} contents of the file
  */
 function include_(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent()
 }
 
 /**
- * newSpreadsheet_ creates a new data spreadsheet to hold the flash card data
+ * Creates a new data spreadsheet to hold the flash card data
  * mutates (sets/overwrites) the user's properties for SHEET_ID and SHEET_URL
- * @returns {Spreadsheet}
+ * @returns {GoogleAppsScript.Spreadsheet.Spreadsheet}
  */
 function newSpreadsheet_() {
   const spreadsheet = SpreadsheetApp.create(defaults.SPREADSHEET_NAME)
