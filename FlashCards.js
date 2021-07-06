@@ -3,7 +3,7 @@
     getCards
     include_
 */
-var defaults = {
+const defaults = {
   SPREADSHEET_NAME: "Flash Cards", // register preferred name here
   SPREADSHEET_ID: "sheetId", // avoids bugs from string based key
   SHEET_URL: "sheetUrl", // avoids bugs from string based key
@@ -22,8 +22,8 @@ var defaults = {
  * the request parameter is not currently used
  */
 function doGet(/*request*/) {
-  var template = HtmlService.createTemplateFromFile("index")
-  var html = template.evaluate()
+  const template = HtmlService.createTemplateFromFile("index")
+  const html = template.evaluate()
   html.setTitle("flash cards").addMetaTag("viewport", "width=device-width")
   return html
 }
@@ -34,16 +34,12 @@ function doGet(/*request*/) {
  * @returns {object} contains two string arrays and a url string
  */
 function getCards() {
-  var sheet = getSheet_()
-  var values = sheet.getDataRange().getValues()
-  values.shift()
-  var cards = []
-  var chapters = {}
-  var h = defaults.headings
-  if (values.length == 0) {
-    // no flash cards to display
-    values = getDefaultCards_() // display help cards
-  }
+  const sheet = getSheet_()
+  const sheetValues = sheet.getDataRange().getValues().slice(1)
+  const values = sheetValues.length ? sheetValues : getDefaultCards_()
+  const cards = []
+  const chapters = {}
+  const h = defaults.headings
   values.forEach(function (row) {
     if (!chapters[row[h.CHAPTER]]) {
       chapters[row[h.CHAPTER]] = {}
@@ -69,8 +65,8 @@ function getCards() {
  * @returns {string[][]}
  */
 function getDefaultCards_() {
-  var card = []
-  var h = defaults.headings
+  const card = []
+  const h = defaults.headings
   card[h.CHAPTER] = card[h.SECTION] = 1
   card[h.FRONT] =
     "This is the front of a card. Click the card to " + "turn it over."
@@ -88,7 +84,9 @@ function getDefaultCards_() {
  * @returns {Sheet} the user's default data sheet
  */
 function getSheet_() {
-  var id = PropertiesService.getUserProperties().getProperty(defaults.SHEET_ID)
+  const id = PropertiesService.getUserProperties().getProperty(
+    defaults.SHEET_ID
+  )
   if (!id) {
     return newSpreadsheet_().getSheets()[0]
   }
@@ -121,13 +119,13 @@ function include_(filename) {
  * @returns {Spreadsheet}
  */
 function newSpreadsheet_() {
-  var spreadsheet = SpreadsheetApp.create(defaults.SPREADSHEET_NAME)
-  var userProperties = PropertiesService.getUserProperties()
+  const spreadsheet = SpreadsheetApp.create(defaults.SPREADSHEET_NAME)
+  const userProperties = PropertiesService.getUserProperties()
   userProperties.setProperty(defaults.SHEET_ID, spreadsheet.getId())
   userProperties.setProperty(defaults.SHEET_URL, spreadsheet.getUrl())
-  var sheet = spreadsheet.getSheets()[0]
-  var headerRow = []
-  var h = defaults.headings
+  const sheet = spreadsheet.getSheets()[0]
+  const headerRow = []
+  const h = defaults.headings
   headerRow[h.CHAPTER] = "Chapter"
   headerRow[h.SECTION] = "Section"
   headerRow[h.FRONT] = "Front"

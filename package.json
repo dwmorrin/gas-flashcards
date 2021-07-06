@@ -1,0 +1,12 @@
+{
+  "name": "gas-flashcards",
+  "version": "1.0.0",
+  "main": "FlashCards.js",
+  "repository": "git@github.com:dwmorrin/gas-flashcards",
+  "author": "David Morrin <dwmorrin@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^7.30.0",
+    "eslint-plugin-googleappsscript": "^1.0.4"
+  }
+}
