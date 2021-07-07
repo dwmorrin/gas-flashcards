@@ -2,6 +2,7 @@
 
 /* exported
     doGet 
+    addCard
     getCards
     include_
 */
@@ -30,6 +31,16 @@ function doGet(/*request*/) {
   const html = template.evaluate()
   html.setTitle("flash cards").addMetaTag("viewport", "width=device-width")
   return html
+}
+
+function addCard(card) {
+  try {
+    const sheet = getSheet_()
+    sheet.appendRow(new Card(card).toArray())
+    return "add card OK"
+  } catch (error) {
+    return error.message
+  }
 }
 
 /**

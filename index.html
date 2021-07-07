@@ -18,6 +18,7 @@
         <option value="all">All</option>
       </select>
       <label for="section">Section</label>
+      <button id="new-card">Add a card</button>
       <a target="_blank" id="datasheetlink">Data Spreadsheet</a>
     </nav>
     <input type="checkbox" id="shuffle" />
@@ -25,6 +26,17 @@
     <span id="status">Card _ of _</span>
     <p id="front" class="hidden"></p>
     <p id="back" class="hidden"></p>
+
+    <div class="hidden" id="new-card-container">
+      <form id="new-card-form">
+        <label>Chapter <input type="text" name="chapter" required /></label>
+        <label>Section <input type="text" name="section" required /></label>
+        <label>Front <textarea name="front" required></textarea></label>
+        <label>Back <textarea name="back" required></textarea></label>
+        <button id="new-card-cancel" type="button">Cancel</button>
+        <button id="new-card-submit" type="submit">Submit</button>
+      </form>
+    </div>
 
     <?!= include_("script", defaults) ?>
   </body>

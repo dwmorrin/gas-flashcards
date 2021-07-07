@@ -47,11 +47,16 @@
 
   const front = document.querySelector("#front"),
     back = document.querySelector("#back"),
-    chapter = document.querySelector('select[name="chapter"]'),
-    section = document.querySelector('select[name="section"]'),
+    chapterSelect = document.querySelector('select[name="chapter"]'),
+    sectionSelect = document.querySelector('select[name="section"]'),
     dataSheetLink = document.querySelector("#datasheetlink"),
     shuffleCheckbox = document.querySelector("#shuffle"),
-    statusSpan = document.querySelector("#status")
+    statusSpan = document.querySelector("#status"),
+    newCardButton = document.getElementById("new-card"),
+    newCardContainer = document.getElementById("new-card-container"),
+    newCardForm = document.getElementById("new-card-form"),
+    newCardCancel = document.getElementById("new-card-cancel"),
+    newCardSubmit = document.getElementById("new-card-submit")
 
   let cards = [],
     chapters = {},
@@ -64,29 +69,35 @@
     .getCards()
 
   // register event handlers
-  window.addEventListener("click", handleClick)
-  window.addEventListener("keydown", handleKeydown)
-  chapter.addEventListener("change", handleChange)
+  front.addEventListener("click", () => cardAction())
+  back.addEventListener("click", () => cardAction())
+  chapterSelect.addEventListener("change", handleChapterChange)
+  sectionSelect.addEventListener("change", () => reset())
+  newCardForm.addEventListener("submit", onNewCardSubmit)
+  newCardButton.addEventListener("click", showNewCardForm)
+  newCardCancel.addEventListener("click", hideNewCardForm)
   google.script.history.setChangeHandler(handleHistory)
 
   // end script; begin function definitions
 
   /**
-   * cardAction is called when the user clicks on a card or presses spacebar
+   * cardAction is called when the user clicks on a card
    */
   function cardAction() {
     if (front.classList.contains("hidden")) {
       do {
         ++cardIndex
-        if (cardIndex == cards.length) {
+        if (cardIndex === cards.length) {
           if (shuffleCheckbox.checked) {
             shuffle(cards)
           }
           cardIndex = 0
         }
       } while (
-        (chapter.value != "all" && cards[cardIndex].chapter != chapter.value) ||
-        (section.value != "all" && cards[cardIndex].section != section.value)
+        (chapterSelect.value !== "all" &&
+          cards[cardIndex].chapter != chapterSelect.value) ||
+        (sectionSelect.value !== "all" &&
+          cards[cardIndex].section != sectionSelect.value)
       )
       updateCard(cards[cardIndex])
     }
@@ -117,28 +128,20 @@
     back.classList.toggle("hidden")
   }
 
-  /** handles the chapter select element */
-  function handleChange(change) {
-    empty(section)
+  function handleChapterChange(change) {
+    empty(sectionSelect)
     const all = document.createElement("option")
     all.textContent = "All"
     all.value = "all"
     all.setAttribute("selected", true)
-    section.appendChild(all)
+    sectionSelect.appendChild(all)
     if (change.target.value == "all") {
-      section.setAttribute("disabled", true)
+      sectionSelect.setAttribute("disabled", true)
     } else {
-      section.removeAttribute("disabled")
-      fill(section, chapters, change.target.value)
+      sectionSelect.removeAttribute("disabled")
+      fill(sectionSelect, chapters, change.target.value)
     }
-  }
-
-  /** handles clicking on the card */
-  function handleClick(click) {
-    if (click.target.tagName != "P") {
-      return
-    }
-    cardAction()
+    reset()
   }
 
   // simple display of error to the user
@@ -155,10 +158,45 @@
     flipCard()
   }
 
-  function handleKeydown(keydown) {
-    if (keydown.key == " ") {
-      cardAction()
+  function hideNewCardForm() {
+    newCardContainer.classList.add("hidden")
+    newCardButton.removeAttribute("disabled")
+  }
+
+  function onNewCardAdded(response, card) {
+    console.log(response)
+    cards.push(card)
+    if (!chapters[card.chapter]) {
+      card.chapter = {}
+      empty(chapterSelect)
+      fill(chapterSelect, chapters)
     }
+    if (!chapters[card.chapter][card.section]) {
+      chapters[card.chapter][card.section] = true
+      if (chapterSelect.value === String(card.chapter)) {
+        const { value } = sectionSelect
+        empty(sectionSelect)
+        fill(sectionSelect, chapters, card.chapter)
+        sectionSelect.value = value
+      }
+    }
+    updateStatus()
+    newCardSubmit.removeAttribute("disabled")
+  }
+
+  function onNewCardSubmit(event) {
+    event.preventDefault()
+    const { elements } = newCardForm
+    const values = ["chapter", "section", "front", "back"].reduce(
+      (res, key) => ({ ...res, [key]: elements[key].value }),
+      {}
+    )
+    newCardSubmit.setAttribute("disabled", true)
+    google.script.run
+      .withFailureHandler(handleError)
+      .withSuccessHandler(onNewCardAdded)
+      .withUserObject(new Card(values))
+      .addCard(values)
   }
 
   /**
@@ -180,6 +218,18 @@
     text = text.replace(subscriptRegex, "<sub>$1$2</sub>")
     text = text.replace(superscriptRegex, "<sup>$1$2</sup>")
     return text
+  }
+
+  function reset() {
+    cardIndex = 0
+    front.classList.add("hidden")
+    back.classList.remove("hidden")
+    cardAction()
+  }
+
+  function showNewCardForm() {
+    newCardButton.setAttribute("disabled", true)
+    newCardContainer.classList.remove("hidden")
   }
 
   /**
@@ -207,7 +257,7 @@
     cards = response.cards.map((data) => new Card(data))
     chapters = response.chapters
     dataSheetLink.setAttribute("href", response.url)
-    fill(chapter, chapters)
+    fill(chapterSelect, chapters)
     if (shuffleCheckbox.checked) {
       shuffle(cards)
     }
@@ -221,7 +271,11 @@
   function updateCard(card) {
     front.innerHTML = prettyPrint(card.front)
     back.innerHTML = prettyPrint(card.back)
-    const number = cardIndex + 1
-    statusSpan.textContent = `Card ${number} of ${cards.length}`
+    updateStatus()
+  }
+
+  // TODO filter total cards to match selected chapter and section
+  function updateStatus() {
+    statusSpan.textContent = `Card ${cardIndex + 1} of ${cards.length}`
   }
 </script>

@@ -26,4 +26,18 @@
   p#back {
     background-color: #ddeeaa;
   }
+
+  form {
+    display: grid;
+    grid-auto-columns: min-content;
+  }
+
+  form button {
+    margin-left: 0; /* override for Google style sheet */
+  }
+
+  input:invalid,
+  textarea:invalid {
+    box-shadow: 0 0 5px 1px red;
+  }
 </style>
